@@ -2,7 +2,8 @@
 
 import yaml
 import json
-
+import subprocess
+import sys
 
 def filetype(file: str):
     suffix = file.split('.')[-1]
@@ -15,9 +16,7 @@ def filetype(file: str):
 
 class artisan(object):
     """Preprocessor for using packer."""
-    def __init__(self, artisan_file=None,
-                 config_file="/etc/artisan/artisan.yml"):
-        print(config_file)
+    def __init__(self, artisan_file=None,config_file="conf/artisan.yml"):
         self.config = None
         self.data = None
         ftype = filetype(config_file)
@@ -38,9 +37,9 @@ class artisan(object):
             self.packer_file = json.load(f)
 
     def _compile_builders(self, builder):
-        if not self.config.get('builders'):
-            raise Exception("No builder section in your artisan.yml!")
-        rtn = self.config['builders'].get(builder)
+        if not self.config['builders']:
+            raise Exception("No builders section in your artisan.yml!")
+        rtn = self.config['builders'][builder]
         if not rtn:
             raise Exception("No such builder '{}'!".format(builder))
         return rtn
@@ -73,6 +72,15 @@ class artisan(object):
         packer['variables'] = self._compile_variables(builder)
         return packer
 
+    def _validate_packer_file(self,filepath):
+        results = subprocess.run(["packer", "validate", filepath],capture_output=True, cwd="output")
+        if results.returncode != 0:
+            print("An error occurred while validating the packer template. {}".format(results.stdout))
+            sys.exit(1)
+        else:
+            print("Packer file is valid")  
+               
+
     def _to_yaml(self, data):
         return yaml.dump(data)
 
@@ -82,8 +90,9 @@ class artisan(object):
     def write_packer(self, filepath, builder='ec2'):
         with open(filepath, 'w') as f:
             f.write(self._to_json(self._compile_packer(builder)))
+        self._validate_packer_file(filepath)   
 
 
 if __name__ == "__main__":
-    d1 = artisan(None, 'conf/artisan.yml')
-    d1._to_json()
+    d1 = artisan()
+    d1.write_packer("packer2.json", "docker")
