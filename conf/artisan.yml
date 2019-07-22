@@ -1,72 +1,148 @@
-buildami:
-  variables:
-    owner: ""
-    role: ""
-    version: ""
-    sourceami: ""
-  builders:
+---
+builders:
+  ec2:
     -
-      type: "amazon-ebs"
-      region: "us-east-1"
-      source_ami: "{{ user `sourceami` }}"
-      instance_type: "t2.micro"
-      ssh_username: "ec2-user"
-      ami_name: "inin-{{user `role`}}-{{user `version`}}"
-      ami_description: "inin-{{user `role`}}-{{user `version`}}"
-      ssh_timeout: "5m"
-      iam_instance_profile: "default"
-      enhanced_networking: true
-      vpc_id: "vpc-ba514bd8"
-      subnet_id: "subnet-bbf02f90"
-      security_group_id: "sg-cf66d3aa"
-      associate_public_ip_address: true
-      ssh_private_ip: true
-      run_tags:
-        Name: "{{user `role`}}"
-        role: "{{user `role`}}"
-      tags:
-        Name: "{{user `role`}}"
-        role: "{{user `role`}}"
-        owner: "{{ user `owner` }}"
-        version: "{{user `version`}"
-        source_ami: "{{ user `sourceami` }}"
+      type: amazon-ebs
+      ami_name: "{{user `role`}}-ebs {{isotime | clean_ami_name}}"
+      ena_support: true
+      iam_instance_profile: default
+      instance_type: "{{ user `instance_type` }}"
+      region: us-east-1
+      security_group_id: sg-cf66d3aa
+      source_ami: "{{user `sourceami`}}"
+      ssh_interface: private_ip
+      ssh_timeout: 5m
+      ssh_username: ec2-user
+      subnet_id: subnet-21e7b967
+      ami_block_device_mappings:
+        -
+          delete_on_termination: true
+          device_name: /dev/sdo
+          snapshot_id: snap-05088deb6848614fd
+          volume_size: 8
+          volume_type: standard
+        -
+          delete_on_termination: true
+          device_name: /dev/sdp
+          snapshot_id: snap-0bfa74ba21a29f0c5
+          volume_size: 8
+          volume_type: standard
       launch_block_device_mappings:
         -
-          device_name: "/dev/xvda"
-          volume_type: "gp2"
-          volume_size:  40
           delete_on_termination: true
-        -
-          device_name: "/dev/sdo"
-          no_device: true
-        -
-          device_name: "/dev/sdp"
-          no_device: true
-  provisioners:
+          device_name: /dev/xvda
+          volume_size: 8
+          volume_type: gp2
+      run_tags:
+        Name: "{{ user `role` }}-packer"
+        role: "{{ user `role` }}-packer"
+      tags:
+        Name: "{{ user `role` }}"
+        build: "{{ user `build` }}"
+        build_number: "{{ user `build_number` }}"
+        build_url: "{{ user `build_url` }}"
+        owner: cloud-ops@corp.com
+        role: "{{ user `role` }}"
+        source_ami: "{{ user `sourceami` }}"
+        source_commit_hash: "{{ user `source_commit_hash` }}"
+        source_repo: "{{ user `source_repo` }}"
+        forcefield_commit_hash: "{{ user `forcefield_commit_hash` }}"
+
+  docker:
     -
-      type: "file"
-      source: "{{user `ansible-dir`}}"
-      destination: "/home/ec2-user/ansible"
+      type: docker
+      image: "{{ user `source_image` }}"
+      commit: yes
+      privileged: yes
+      run_command:
+        - "-d"
+        - "-i"
+        - "-t"
+        - "--entrypoint=/sbin/init"
+        - "--"
+        - "{{.Image}}"
+
+provisioners:
+  ec2:
     -
-      type: "shell"
+      destination: /home/ec2-user/forcefield.tgz
+      source: "{{ template_dir }}/../forcedield.tgz"
+      type: file
+    -
+      destination: /home/ec2-user
+      source: ./base
+      type: file
+    -
+      destination: /home/ec2-user/base
+      source: ./deploy
+      type: file
+    -
       inline:
-        -
-          "sudo alternatives --set ansible /opt/ansible/{{user `ansible_version` }}/bin/ansible"
+        - "sudo easy_install pip"
+        - "sudo pip install --upgrade pip virtualenv"
+      type: shell
     -
-      type: "ansible-local"
-      command: "/opt/ansible/{{user `ansible_version` }}/bin/ansible-playbook"
-      playbook_file: "{{user `ansible-dir`}}/install.yml"
-      extra_arguments: "--verbose --limit localhost -e \"role={{user `role`}} version={{user `version`}}\""
-      inventory_file: "{{user `ansible-dir`}}/inv"
-      playbook_dir: "{{user `ansible-dir`}}"
+      script: "{{ template_dir  }}/packer.sh"
+      type: shell
     -
-      type: "shell"
+      playbook_dir: base
+      playbook_file: base/install.yml
+      type: ansible-local
+    -
       inline:
-        -
-          "sudo /var/lib/inin/devops_finalize/finalize --encrypt --reboot"
+        - "sudo /var/lib/inin/devops_finalize/finalize"
+      type: shell
+  docker:
     -
-      type: "shell"
-      start_retry_timeout: "10m"
       inline:
-        -
-          "sudo /var/lib/inin/devops_finalize/verify"
+        - "yum install -y shadow-utils sudo python2-setuptools initscripts"
+        - "groupadd -g 1000 ec2-user"
+        - "useradd -g 1000 -u 1000 -G wheel -m ec2-user"
+        - "sed -i 's/^%wheel/# %wheel/' /etc/sudoers"
+        - "sed -i 's/^# %wheel	ALL=(ALL)	NOPASSWD: ALL/%wheel	ALL=(ALL)	NOPASSWD: ALL/' /etc/sudoers"
+        - "mkdir -p /var/lib/cloud/scripts/per-boot"
+      type: shell
+    -
+      destination: /home/ec2-user
+      source: ./base
+      type: file
+    -
+      destination: /home/ec2-user/base
+      source: ./deploy
+      type: file
+    -
+      inline:
+        - "sudo easy_install pip"
+        - "sudo pip install --upgrade pip virtualenv"
+      type: shell
+    -
+      script: "{{ template_dir  }}/packer.sh"
+      type: shell
+    -
+      playbook_dir: base
+      playbook_file: base/docker_install.yml
+      type: ansible-local
+      extra_arguments:
+        - "--extra-vars \"build_type={{user `build_type`}}\""
+
+post-processors:
+  docker:
+    -
+      type: docker-tag
+      repository: amzn2
+      tag: 0.2
+
+variables:
+  docker:
+    source_image: amazonlinux
+    build_type: docker
+  ec2:
+    build: "{{ env `JOB_NAME` }}"
+    build_number: "{{ env `BUILD_NUMBER` }}"
+    build_url: "{{ env `BUILD_URL` }}"
+    instance_type: c5.large
+    role: basev2
+    source_commit_hash: "{{ env `GIT_COMMIT` }}"
+    source_repo: "{{ env `GIT_URL` }}"
+    sourceami: ami-0f686c64c5fb9828c
+    forcefield_commit_hash: "{{ env `FORCEFIELD_COMMIT_HASH` }}"

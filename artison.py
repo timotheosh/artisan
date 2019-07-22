@@ -4,15 +4,30 @@ import yaml
 import json
 
 
+def filetype(file: str):
+    suffix = file.split('.')[-1]
+    if suffix == 'yml' or suffix == 'yaml':
+        return 'yaml'
+    elif suffix == 'json' or suffix == 'jsn':
+        return 'json'
+    else:
+        raise Exception('Invalid filetype!')
+
 class artisan(object):
     """Preprocessor for using packer."""
-
     def __init__(self, artisan_file=None,
                  config_file="/etc/artisan/artisan.yml"):
+        print(config_file)
         self.config = None
         self.data = None
+        ftype = filetype(config_file)
         with open(config_file, 'r') as file:
-            self.config = yaml.safe_load(file)
+            if ftype == 'yaml':
+                self.config = yaml.safe_load(file)
+            elif ftype == 'json':
+                self.config = json.load(file)
+            else:
+                "Invalid config file!"
         if artisan_file:
             with open(artisan_file, 'r') as file:
                 self.data = yaml.safe_load(file)
@@ -70,5 +85,5 @@ class artisan(object):
 
 
 if __name__ == "__main__":
-    d1 = artisan()
-    d1.write_packer("/home/thawes/src/sources/base-ami/deploy/packer2.json", "docker")
+    d1 = artisan(None, 'conf/artisan.yml')
+    d1._to_json()
