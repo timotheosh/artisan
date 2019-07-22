@@ -5,7 +5,7 @@ import json
 
 
 class artisan(object):
-    """DSL for using packer."""
+    """Preprocessor for using packer."""
 
     def __init__(self, artisan_file=None,
                  config_file="/etc/artisan/artisan.yml"):
@@ -67,6 +67,7 @@ class artisan(object):
     def write_packer(self, filepath, builder='ec2'):
         with open(filepath, 'w') as f:
             f.write(self._to_json(self._compile_packer(builder)))
+
 
 if __name__ == "__main__":
     d1 = artisan()
