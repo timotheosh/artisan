@@ -29,6 +29,11 @@ def filetype(file: str):
     else:
         raise Exception('Invalid filetype!')
 
+def path_ref(num):
+    """ if num is a number, return an index [num] as a string, otherwise just return num."""
+    if isinstance(num, int):
+        num = '[{}]'.format(num)
+    return num
 
 class artisan(object):
     """Preprocessor for using packer."""
@@ -71,7 +76,7 @@ class artisan(object):
         for path_objects in dpath.path.paths(override_yaml):
             path = dpath.path.paths_only(path_objects)
             if path[-1] == True:
-                paths.append('/'.join([str(y) for y in path[:-1]]))
+                paths.append('/'.join([path_ref(y) for y in path[:-1]]))
         return paths
 
     def _get_merge_appends(self):
