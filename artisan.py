@@ -18,7 +18,7 @@ import subprocess
 import sys
 from os.path import exists, dirname
 from docopt import docopt
-
+import dpath.util
 
 def filetype(file: str):
     suffix = file.split('.')[-1]
@@ -64,6 +64,15 @@ class artisan(object):
             with open(override_file, 'r') as file:
                 overrides = yaml.safe_load(file)
         return overrides
+
+    def _get_overrides(self):
+        override_yaml = self._get_merge_overrides()
+        paths = []
+        for path_objects in dpath.path.paths(override_yaml):
+            path = dpath.path.paths_only(path_objects)
+            if path[-1] == True:
+                paths.append('/'.join([str(y) for y in path[:-1]]))
+        return paths
 
     def _get_merge_appends(self):
         appends_file = "{}/append.yml".format(self.config_dir)
@@ -147,3 +156,9 @@ if __name__ == "__main__":
     d1 = artisan(artisan_file, config_dir)
     d1.write_packer('docker')
 
+"""
+o = yaml.safe_load(open("conf/override.yml", 'r')
+for x in dpath.path.paths(o):
+    print(dpath.path.paths_only(x))
+
+"""
