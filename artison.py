@@ -76,13 +76,6 @@ class artisan(object):
     def merge_overrides(self):
         overrides = self._get_merge_overrides()
 
-    def recursive_items(self, dictionary):
-        for key, value in dictionary.items():
-            if type(value) is dict:
-                yield from self.recursive_items(value)
-            else:
-                yield (key, value)
-
     def _check_for_builders(self, builder):
         """ Checks that the configuration has an appropriate builders section. """
         if not self.config.get('builders'):
