@@ -1,0 +1,71 @@
+{
+  "builders": [
+    {
+      "type": "docker",
+      "image": "{{ user `source_image` }}",
+      "commit": true,
+      "privileged": true,
+      "run_command": [
+        "-d",
+        "-i",
+        "-t",
+        "--entrypoint=/sbin/init",
+        "--",
+        "{{.Image}}"
+      ]
+    }
+  ],
+  "provisioners": [
+    {
+      "inline": [
+        "yum install -y shadow-utils sudo python2-setuptools initscripts",
+        "groupadd -g 1000 ec2-user",
+        "useradd -g 1000 -u 1000 -G wheel -m ec2-user",
+        "sed -i 's/^%wheel/# %wheel/' /etc/sudoers",
+        "sed -i 's/^# %wheel\tALL=(ALL)\tNOPASSWD: ALL/%wheel\tALL=(ALL)\tNOPASSWD: ALL/' /etc/sudoers",
+        "mkdir -p /var/lib/cloud/scripts/per-boot"
+      ],
+      "type": "shell"
+    },
+    {
+      "destination": "/home/ec2-user",
+      "source": "./base",
+      "type": "file"
+    },
+    {
+      "destination": "/home/ec2-user/base",
+      "source": "./deploy",
+      "type": "file"
+    },
+    {
+      "inline": [
+        "sudo easy_install pip",
+        "sudo pip install --upgrade pip virtualenv"
+      ],
+      "type": "shell"
+    },
+    {
+      "script": "{{ template_dir  }}/packer.sh",
+      "type": "shell"
+    },
+    {
+      "playbook_dir": "base",
+      "playbook_file": "base/docker_install.yml",
+      "type": "ansible-local",
+      "extra_arguments": [
+        "--extra-vars \"build_type={{user `build_type`}}\""
+      ]
+    }
+  ],
+  "post-processors": [
+    {
+      "type": "docker-tag",
+      "repository": "amzn2",
+      "tag": 0.2
+    }
+  ],
+  "variables": {
+    "source_image": "amazonlinux",
+    "build_type": "docker"
+  }
+}
