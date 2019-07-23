@@ -2,12 +2,14 @@
 """ artisan
 Usage:
     artisan.py <artisan_file>
+    artisan.py --config <config_dir>
     artisan.py (-h | --help)
     artisan.py --version
 Options:
-    <artisan_file>  Generate packer.json file and validate with packer.
-    -h --help       Show this screen.
-    --version       Show version.
+    <artisan_file>           Generate packer.json file and validate with packer.
+    --config=<config_dir>    Directory where the main artisan configuratin files are.
+    -h --help                Show this screen.
+    --version                Show version.
 """
 
 import yaml
@@ -15,8 +17,6 @@ import json
 import subprocess
 import sys
 from os.path import exists, dirname
-from functools import reduce
-from operator import getitem
 from docopt import docopt
 
 
@@ -28,6 +28,7 @@ def filetype(file: str):
         return 'json'
     else:
         raise Exception('Invalid filetype!')
+
 
 class artisan(object):
     """Preprocessor for using packer."""
@@ -122,8 +123,8 @@ class artisan(object):
         packer['variables'] = self._compile_variables(builder)
         return packer
 
-    def _validate_packer_file(self,filepath):
-        results = subprocess.run(["packer", "validate", filepath],capture_output=True, cwd=os.path.dirname(filepath))
+    def _validate_packer_file(self):
+        results = subprocess.run(["packer", "validate", self.packerfile], cwd=dirname(self.packerfile))
         if results.returncode != 0:
             print("An error occurred while validating the packer template. {}".format(results.stdout))
             sys.exit(1)
@@ -140,28 +141,16 @@ class artisan(object):
     def to_json(self, builder):
         return self._to_json(self._compile_packer(builder))
 
-    def write_packer(self, filepath, builder='ec2'):
-        with open(filepath, 'w') as f:
+    def write_packer(self, builder='ec2'):
+        with open(self.packerfile, 'w') as f:
             f.write(self._to_json(self._compile_packer(builder)))
-        self._validate_packer_file(filepath)   
+        self._validate_packer_file()
 
 
 if __name__ == "__main__":
     arguments = docopt(__doc__, version='Artisan 0.2')
-    print(arguments)
-    print(artisan_path(arguments['<artisan_file>']))
-    d1 = artisan('conf/')
-    d1.load('conf/test.yml')
-    #print(d1.to_json("docker"))
-    custom = d1.custom
-    data = d1._get_merge_overrides()
-
-    print(custom.keys())
-
-    for key, value in d1.recursive_items(data):
-        print(key, value)
-        if custom.get(key):
-            print(key, custom[key])
-        else:
-            print('MISSING KEY: {}'.format(key))
+    config_dir = arguments['<config_dir>'] or "conf"
+    artisan_file = arguments['<artisan_file>'] or "conf/test.yml"
+    d1 = artisan(artisan_file, config_dir)
+    d1.write_packer('docker')
 
