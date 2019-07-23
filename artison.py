@@ -4,6 +4,7 @@ import yaml
 import json
 import subprocess
 import sys
+import os
 
 def filetype(file: str):
     suffix = file.split('.')[-1]
@@ -37,9 +38,9 @@ class artisan(object):
             self.packer_file = json.load(f)
 
     def _compile_builders(self, builder):
-        if not self.config['builders']:
+        if not self.config.get('builders'):
             raise Exception("No builders section in your artisan.yml!")
-        rtn = self.config['builders'][builder]
+        rtn = self.config.get('builders').get(builder)
         if not rtn:
             raise Exception("No such builder '{}'!".format(builder))
         return rtn
@@ -73,7 +74,7 @@ class artisan(object):
         return packer
 
     def _validate_packer_file(self,filepath):
-        results = subprocess.run(["packer", "validate", filepath],capture_output=True, cwd="output")
+        results = subprocess.run(["packer", "validate", filepath],capture_output=True, cwd=os.path.dirname(filepath))
         if results.returncode != 0:
             print("An error occurred while validating the packer template. {}".format(results.stdout))
             sys.exit(1)
@@ -94,5 +95,5 @@ class artisan(object):
 
 
 if __name__ == "__main__":
-    d1 = artisan()
-    d1.write_packer("packer2.json", "docker")
+    d1 = artisan('conf/artisan.yml')
+    d1.write_packer("/Users/johncarnell/play/artisan/output/packer2.json", "docker")
