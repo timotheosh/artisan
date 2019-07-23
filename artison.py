@@ -47,7 +47,7 @@ class artisan(object):
                 raise Exception("Invalid config file!")
         self.custom = None
 
-    def load(self, config_file):
+    def _load(self, config_file):
         suffix = filetype(config_file)
         with open(config_file, 'r') as file:
             if suffix == 'yaml':
