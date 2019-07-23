@@ -2,55 +2,48 @@
 builders:
   ec2:
     -
-      type: amazon-ebs
-      ami_name: "{{user `role`}}-ebs {{isotime | clean_ami_name}}"
-      ena_support: true
-      iam_instance_profile: default
-      instance_type: "{{ user `instance_type` }}"
-      region: us-east-1
-      security_group_id: sg-cf66d3aa
-      source_ami: "{{user `sourceami`}}"
-      ssh_interface: private_ip
-      ssh_timeout: 5m
-      ssh_username: ec2-user
-      subnet_id: subnet-21e7b967
+      type: foobar
+      ami_name: you should never see me
+      ena_support: you should never see me
+      iam_instance_profile: you should never see me
+      instance_type: you should never see me
+      region: you should never see me
+      security_group_id: you should never see me
+      source_ami: you should never see me
+      ssh_interface: you should never see me
+      ssh_timeout: you should never see me
+      ssh_username: you should never see me
+      subnet_id: you should never see me
       ami_block_device_mappings:
         -
-          delete_on_termination: true
-          device_name: /dev/sdo
-          snapshot_id: snap-05088deb6848614fd
-          volume_size: 8
-          volume_type: standard
+          delete_on_termination: true changed
+          device_name: /dev/sdo changed
+          snapshot_id: snap-05088deb6848614fd changed
+          volume_size: 8 changed
+          volume_type: standard changed
         -
-          delete_on_termination: true
-          device_name: /dev/sdp
-          snapshot_id: snap-0bfa74ba21a29f0c5
-          volume_size: 8
-          volume_type: standard
+          delete_on_termination: true changed
+          device_name: /dev/sdp changed
+          snapshot_id: snap-0bfa74ba21a29f0c5 changed
+          volume_size: 8 changed
+          volume_type: standard changed
       launch_block_device_mappings:
         -
-          delete_on_termination: true
-          device_name: /dev/xvda
-          volume_size: 8
-          volume_type: gp2
+          delete_on_termination: you should never see me
+          device_name: you should never see me
+          volume_size: you should never see me
+          volume_type: you should never see me
       run_tags:
-        Name: "{{ user `role` }}-packer"
-        role: "{{ user `role` }}-packer"
+        Name: you should never see me
+        role: you should never see me
       tags:
         Name: "{{ user `role` }}"
-        build: "{{ user `build` }}"
-        build_number: "{{ user `build_number` }}"
-        build_url: "{{ user `build_url` }}"
-        owner: cloud-ops@corp.com
-        role: "{{ user `role` }}"
-        source_ami: "{{ user `sourceami` }}"
-        source_commit_hash: "{{ user `source_commit_hash` }}"
-        source_repo: "{{ user `source_repo` }}"
-        forcefield_commit_hash: "{{ user `forcefield_commit_hash` }}"
+        owner: me@corp.com
+        role: foobar
 
   docker:
     -
-      type: docker
+      type: you should never see me
       image: "{{ user `source_image` }}"
       commit: yes
       privileged: yes

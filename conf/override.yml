@@ -1,0 +1,12 @@
+---
+builders:
+  ec2:
+    - ami_block_device_mappings
+    - tags
+  docker:
+    - image
+    - commit
+    - privileged
+    - pull
+postprocessors:
+  - docker
