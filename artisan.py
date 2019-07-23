@@ -51,9 +51,9 @@ class artisan(object):
         suffix = filetype(config_file)
         with open(config_file, 'r') as file:
             if suffix == 'yaml':
-                self.custom = yaml.safe_load(file)
+                return yaml.safe_load(file)
             elif suffix == 'json':
-                self.custom = json.load(file)
+                return json.load(file)
             else:
                 raise Exception("Invalid custom config file!")
 
