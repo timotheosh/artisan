@@ -18,9 +18,22 @@ import subprocess
 import sys
 from os.path import exists, dirname
 from docopt import docopt
+import dpath.util
+
+
+def data_to_paths(data: dict):
+    """Converts a dict data object (e.g. from yaml or json, for instance) and converts it into a list of paths, dpath
+    can use."""
+    paths = []
+    for path_objects in dpath.path.paths(data):
+        path = dpath.path.paths_only(path_objects)
+        if path[-1] == True:
+            paths.append('/'.join([path_ref(y) for y in path[:-1]]))
+    return paths
 
 
 def filetype(file: str):
+    """ Returns the file type based on the suffix of the filename."""
     suffix = file.split('.')[-1]
     if suffix == 'yml' or suffix == 'yaml':
         return 'yaml'
@@ -28,6 +41,13 @@ def filetype(file: str):
         return 'json'
     else:
         raise Exception('Invalid filetype!')
+
+
+def path_ref(num):
+    """ if num is a number, return an index [num] as a string, otherwise just return num."""
+    if isinstance(num, int):
+        num = '[{}]'.format(num)
+    return num
 
 
 class artisan(object):
@@ -64,6 +84,9 @@ class artisan(object):
             with open(override_file, 'r') as file:
                 overrides = yaml.safe_load(file)
         return overrides
+
+    def _get_overrides(self):
+        return data_to_paths(self._get_merge_overrides())
 
     def _get_merge_appends(self):
         appends_file = "{}/append.yml".format(self.config_dir)
@@ -109,7 +132,7 @@ class artisan(object):
         return rtn
 
     def _compile_packer(self, builder):
-        packer = {}
+        packer = dict()
         packer['builders'] = self._compile_builders(builder)
         packer['provisioners'] = self._compile_provisioners(builder)
         packer['post-processors'] = self._compile_post_processors(builder)
@@ -123,7 +146,6 @@ class artisan(object):
             sys.exit(1)
         else:
             print("Packer file is valid")  
-               
 
     def _to_yaml(self, data):
         return yaml.dump(data)
@@ -146,4 +168,3 @@ if __name__ == "__main__":
     artisan_file = arguments['<artisan_file>'] or "conf/test.yml"
     d1 = artisan(artisan_file, config_dir)
     d1.write_packer('docker')
-

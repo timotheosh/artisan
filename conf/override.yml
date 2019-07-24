@@ -1,12 +1,14 @@
 ---
 builders:
   ec2:
-    - ami_block_device_mappings
-    - tags
+    -
+      ami_block_device_mappings: yes
+      tags: yes
   docker:
-    - image
-    - commit
-    - privileged
-    - pull
+    -
+      image: yes
+      commit: yes
+      privileged: yes
+      pull: yes
 postprocessors:
-  - docker
+  docker: yes
