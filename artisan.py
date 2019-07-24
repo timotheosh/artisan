@@ -2,7 +2,7 @@
 """ artisan
 Usage:
     artisan.py <artisan_file>
-    artisan.py --config <config_dir>
+    artisan.py --config <config_dir> <artisan_file>
     artisan.py (-h | --help)
     artisan.py --version
 Options:
@@ -192,8 +192,8 @@ class artisan(object):
 
 
 if __name__ == "__main__":
-    #arguments = docopt(__doc__, version='Artisan 0.2')
-    config_dir = "conf"
-    artisan_file = "conf/test.yml"
+    arguments = docopt(__doc__, version='Artisan 0.2')
+    config_dir = arguments['--config'] or "conf"
+    artisan_file = arguments['<artisan_file>'] or "conf/test.yml"
     d1 = artisan(artisan_file, config_dir)
     d1.write_packer('docker')
