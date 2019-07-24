@@ -2,6 +2,7 @@
 builders:
   ec2:
     -
+      type: yes
       ami_block_device_mappings: yes
       tags: yes
   docker:

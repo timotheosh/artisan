@@ -1,4 +1,4 @@
 ---
 provisioners:
-  - docker
-  - ec2
+  docker: yes
+  ec2: yes
