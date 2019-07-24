@@ -106,3 +106,6 @@ venv.bak/
 
 # Jetbrains artifacts
 .idea
+
+# Project artifacts
+target/

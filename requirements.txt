@@ -1,3 +1,4 @@
 pyyaml
 docopt
 dpath
+nuitka
