@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """ artisan
 Usage:
-    artisan.py <artisan_file>
-    artisan.py --config <config_dir> <artisan_file>
-    artisan.py (-h | --help)
-    artisan.py --version
+    artisan <artisan_file>
+    artisan --config <config_dir> <artisan_file>
+    artisan (-h | --help)
+    artisan --version
 Options:
     <artisan_file>           Generate packer.json file and validate with packer.
     --config=<config_dir>    Directory where the main artisan configuratin files are.
