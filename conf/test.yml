@@ -126,6 +126,7 @@ variables:
     build_url: "{{ env `BUILD_URL` }}"
     instance_type: c5.large
     role: basev2
+    owner: me@corp.com
     source_commit_hash: "{{ env `GIT_COMMIT` }}"
     source_repo: "{{ env `GIT_URL` }}"
     sourceami: ami-0f686c64c5fb9828c

@@ -18,7 +18,14 @@ import subprocess
 import sys
 from os.path import exists, dirname
 from docopt import docopt
-import dpath.util
+import dpath
+
+
+def path_ref(num):
+    """ if num is a number, return an index [num] as a string, otherwise just return num."""
+    if isinstance(num, int):
+        num = '[{}]'.format(num)
+    return num
 
 
 def data_to_paths(data: dict):
@@ -32,6 +39,25 @@ def data_to_paths(data: dict):
     return paths
 
 
+def valid_path(data: dict, key: str):
+    try:
+        dpath.util.get(data, key)
+        return True
+    except KeyError:
+        return False
+
+
+def merge_data(data1, data2):
+    rtn = data1.copy()
+    if isinstance(rtn, dict):
+        rtn.update(data2)
+    elif isinstance(data1, list):
+        rtn.append(data2)
+    else:
+        raise Exception("Unknown data type!")
+    return rtn
+
+
 def filetype(file: str):
     """ Returns the file type based on the suffix of the filename."""
     suffix = file.split('.')[-1]
@@ -42,30 +68,13 @@ def filetype(file: str):
     else:
         raise Exception('Invalid filetype!')
 
-
-def path_ref(num):
-    """ if num is a number, return an index [num] as a string, otherwise just return num."""
-    if isinstance(num, int):
-        num = '[{}]'.format(num)
-    return num
-
-
 class artisan(object):
     """Preprocessor for using packer."""
     def __init__(self, artisan_file, config_dir="conf"):
         self.packerfile = dirname(artisan_file)
         self.artisan = self._load(artisan_file)
         self.config_dir = config_dir
-        config_file = "{}/artisan.yml".format(self.config_dir)
-        ftype = filetype(config_file)
-        with open(config_file, 'r') as file:
-            if ftype == 'yaml':
-                self.config = yaml.safe_load(file)
-            elif ftype == 'json':
-                self.config = json.load(file)
-            else:
-                raise Exception("Invalid config file!")
-        self.custom = None
+        self.config = self._load('{}/artisan.yml'.format(config_dir))
 
     def _load(self, config_file):
         suffix = filetype(config_file)
@@ -75,29 +84,49 @@ class artisan(object):
             elif suffix == 'json':
                 return json.load(file)
             else:
-                raise Exception("Invalid custom config file!")
+                raise Exception("Invalid file, cannot load!")
 
     def _get_merge_overrides(self):
         override_file = "{}/override.yml".format(self.config_dir)
         overrides = {}
         if exists(override_file):
-            with open(override_file, 'r') as file:
-                overrides = yaml.safe_load(file)
-        return overrides
-
-    def _get_overrides(self):
-        return data_to_paths(self._get_merge_overrides())
+            overrides = yaml.safe_load(open(override_file, 'r'))
+        return data_to_paths(overrides)
 
     def _get_merge_appends(self):
         appends_file = "{}/append.yml".format(self.config_dir)
         appends = {}
         if exists(appends_file):
-            with open(appends_file, 'r') as file:
-                appends = yaml.safe_load(file)
-        return appends
+            appends = yaml.safe_load(open(appends_file, 'r'))
+        return data_to_paths(appends)
 
-    def merge_overrides(self):
-        overrides = self._get_merge_overrides()
+    def _get_required(self):
+        required_file = "{}/required.yml".format(self.config_dir)
+        required = {}
+        if exists(required_file):
+            required = yaml.safe_load(open(required_file, 'r'))
+        return data_to_paths(required)
+
+    def parse(self):
+        allowed_overrides = self._get_merge_overrides()
+        allowed_appends = self._get_merge_appends()
+        required_fields = self._get_required()
+        new_data = self.config
+        for required in required_fields:
+            try:
+                dpath.util.set(new_data, required,
+                               dpath.util.get(self.artisan, required))
+            except KeyError:
+                raise Exception("Missing required field: {}!".format(required))
+        for override in allowed_overrides:
+            if valid_path(self.artisan, override):
+                dpath.util.set(new_data, override,
+                               dpath.util.get(self.artisan, override))
+        for append in allowed_appends:
+            if valid_path(self.artisan, append):
+                dpath.util.set(new_data, append, merge_data(dpath.util.get(self.config, append),
+                                                            dpath.util.get(self.artisan, append)))
+        self.config = new_data
 
     def _check_for_builders(self, builder):
         """ Checks that the configuration has an appropriate builders section. """

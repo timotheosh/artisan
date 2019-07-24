@@ -1,6 +1,6 @@
 ---
 variables:
   ec2:
-    - role
-    - owner
+    role: yes
+    owner: yes
     
