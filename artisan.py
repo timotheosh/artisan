@@ -67,6 +67,7 @@ def filetype(file: str):
     else:
         raise Exception('Invalid filetype!')
 
+
 class artisan(object):
     """Preprocessor for using packer."""
     def __init__(self, artisan_file, config_dir="conf"):
