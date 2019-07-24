@@ -21,6 +21,17 @@ from docopt import docopt
 import dpath.util
 
 
+def data_to_paths(data: dict):
+    """Converts a dict data object (e.g. from yaml or json, for instance) and converts it into a list of paths, dpath
+    can use."""
+    paths = []
+    for path_objects in dpath.path.paths(data):
+        path = dpath.path.paths_only(path_objects)
+        if path[-1] == True:
+            paths.append('/'.join([path_ref(y) for y in path[:-1]]))
+    return paths
+
+
 def filetype(file: str):
     """ Returns the file type based on the suffix of the filename."""
     suffix = file.split('.')[-1]
@@ -75,13 +86,7 @@ class artisan(object):
         return overrides
 
     def _get_overrides(self):
-        override_yaml = self._get_merge_overrides()
-        paths = []
-        for path_objects in dpath.path.paths(override_yaml):
-            path = dpath.path.paths_only(path_objects)
-            if path[-1] == True:
-                paths.append('/'.join([path_ref(y) for y in path[:-1]]))
-        return paths
+        return data_to_paths(self._get_merge_overrides())
 
     def _get_merge_appends(self):
         appends_file = "{}/append.yml".format(self.config_dir)
