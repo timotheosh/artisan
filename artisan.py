@@ -15,7 +15,6 @@ Options:
 import yaml
 import json
 import subprocess
-import sys
 from os.path import exists, dirname
 from docopt import docopt
 import dpath
@@ -52,7 +51,7 @@ def merge_data(data1, data2):
     if isinstance(rtn, dict):
         rtn.update(data2)
     elif isinstance(data1, list):
-        rtn.append(data2)
+        rtn.extend(data2)
     else:
         raise Exception("Unknown data type!")
     return rtn
@@ -71,8 +70,9 @@ def filetype(file: str):
 class artisan(object):
     """Preprocessor for using packer."""
     def __init__(self, artisan_file, config_dir="conf"):
-        self.packerfile = dirname(artisan_file)
+        self.packerfile = 'generate-packer.json'
         self.artisan = self._load(artisan_file)
+        self.artisan_path = dirname(artisan_file)
         self.config_dir = config_dir
         self.config = self._load('{}/artisan.yml'.format(config_dir))
 
@@ -169,10 +169,9 @@ class artisan(object):
         return packer
 
     def _validate_packer_file(self):
-        results = subprocess.run(["packer", "validate", self.packerfile], cwd=dirname(self.packerfile))
+        results = subprocess.run(["packer", "validate", 'deploy/{}'.format(self.packerfile)], cwd=dirname(self.artisan_path))
         if results.returncode != 0:
-            print("An error occurred while validating the packer template. {}".format(results.stdout))
-            sys.exit(1)
+            raise Exception("An error occurred while validating the packer template. {}".format(results.stdout))
         else:
             print("Packer file is valid")  
 
@@ -186,14 +185,15 @@ class artisan(object):
         return self._to_json(self._compile_packer(builder))
 
     def write_packer(self, builder='ec2'):
-        with open(self.packerfile, 'w') as f:
+        self.parse()
+        with open('{}/{}'.format(self.artisan_path, self.packerfile), 'w') as f:
             f.write(self._to_json(self._compile_packer(builder)))
         self._validate_packer_file()
 
 
 if __name__ == "__main__":
-    arguments = docopt(__doc__, version='Artisan 0.2')
-    config_dir = arguments['<config_dir>'] or "conf"
-    artisan_file = arguments['<artisan_file>'] or "conf/test.yml"
+    #arguments = docopt(__doc__, version='Artisan 0.2')
+    config_dir = "conf"
+    artisan_file = "conf/test.yml"
     d1 = artisan(artisan_file, config_dir)
     d1.write_packer('docker')

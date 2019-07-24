@@ -111,10 +111,10 @@ provisioners:
       type: shell
     -
       playbook_dir: base
-      playbook_file: base/docker_install.yml
+      playbook_file: base/install.yml
       type: ansible-local
       extra_arguments:
-        - "--extra-vars \"build_type={{user `build_type`}}\""
+        - "--extra-vars \"docker=true\""
 
 post-processors:
   docker:
