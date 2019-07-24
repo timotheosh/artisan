@@ -20,7 +20,9 @@ from os.path import exists, dirname
 from docopt import docopt
 import dpath.util
 
+
 def filetype(file: str):
+    """ Returns the file type based on the suffix of the filename."""
     suffix = file.split('.')[-1]
     if suffix == 'yml' or suffix == 'yaml':
         return 'yaml'
@@ -29,11 +31,13 @@ def filetype(file: str):
     else:
         raise Exception('Invalid filetype!')
 
+
 def path_ref(num):
     """ if num is a number, return an index [num] as a string, otherwise just return num."""
     if isinstance(num, int):
         num = '[{}]'.format(num)
     return num
+
 
 class artisan(object):
     """Preprocessor for using packer."""
@@ -123,7 +127,7 @@ class artisan(object):
         return rtn
 
     def _compile_packer(self, builder):
-        packer = {}
+        packer = dict()
         packer['builders'] = self._compile_builders(builder)
         packer['provisioners'] = self._compile_provisioners(builder)
         packer['post-processors'] = self._compile_post_processors(builder)
@@ -137,7 +141,6 @@ class artisan(object):
             sys.exit(1)
         else:
             print("Packer file is valid")  
-               
 
     def _to_yaml(self, data):
         return yaml.dump(data)
@@ -160,10 +163,3 @@ if __name__ == "__main__":
     artisan_file = arguments['<artisan_file>'] or "conf/test.yml"
     d1 = artisan(artisan_file, config_dir)
     d1.write_packer('docker')
-
-"""
-o = yaml.safe_load(open("conf/override.yml", 'r')
-for x in dpath.path.paths(o):
-    print(dpath.path.paths_only(x))
-
-"""
